@@ -1,28 +1,31 @@
-// pages/booking/[id].tsx
+'use client';
 
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Booking } from '@/components/BookingsList';
 
-interface Booking {
-  id: number;
-  date: string;
-  start_time: string;
-  doctor_name: string;
-  service: string;
-  end_time: string;
-}
-
-const BookingDetails = () => {
+const BookingDetails: React.FC = () => {
   const router = useRouter();
   const { id } = router.query;
-  const [booking, setBooking] = useState<Booking | undefined>(undefined);
+  const [booking, setBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
-    if (id) {
-      const foundBooking = bookings.find((b) => b.id === parseInt(id as string));
-      setBooking(foundBooking);
-    }
+    const fetchBooking = async () => {
+      if (id) {
+        try {
+          const res = await fetch(`http://host.docker.internal:5000/api/bookings/${id}`, { cache: 'no-store' });
+          if (!res.ok) {
+            throw new Error('Failed to fetch booking');
+          }
+          const data: Booking = await res.json();
+          setBooking(data);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    };
+    fetchBooking();
   }, [id]);
 
   if (!booking) {
