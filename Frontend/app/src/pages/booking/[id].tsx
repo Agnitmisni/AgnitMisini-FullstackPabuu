@@ -1,32 +1,43 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { Booking } from '@/components/BookingsList';
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getBooking } from "@/helperFunctions/getBooking";
+import { Booking } from "@/types/booking";
 
-const BookingDetails: React.FC = () => {
+const BookingDetails = () => {
   const router = useRouter();
   const { id } = router.query;
-  const [booking, setBooking] = useState<Booking | null>(null);
+  const [booking, setBooking] = useState<Booking>();
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    const fetchBooking = async () => {
-      if (id) {
-        try {
-          const res = await fetch(`http://host.docker.internal:5000/api/bookings/${id}`, { cache: 'no-store' });
-          if (!res.ok) {
-            throw new Error('Failed to fetch booking');
-          }
-          const data: Booking = await res.json();
-          setBooking(data);
-        } catch (error) {
-          console.error(error);
+    getCurrentBooking();
+  }, [id]);
+
+  const getCurrentBooking = async () => {
+    const idAsNumber = Number(id);
+    if (!isNaN(idAsNumber)) {
+      try {
+        const currentBooking = await getBooking(Number(id));
+        setBooking(currentBooking);
+      } catch (error) {
+        if (error.cause === 404) {
+          setNotFound(true);
         }
       }
-    };
-    fetchBooking();
-  }, [id]);
+    }
+  };
+
+  if (notFound) {
+    return (
+      <>
+        <h1>Booking not found</h1>
+        <Link href="/">Back to Home</Link>
+      </>
+    );
+  }
 
   if (!booking) {
     return <div>Loading...</div>;
@@ -35,10 +46,11 @@ const BookingDetails: React.FC = () => {
   return (
     <div>
       <h1>Booking Details</h1>
-      <p>This Booking is with {booking.doctor_name} for {booking.service} and it ends on {booking.end_time}</p>
-      <Link href="/">
-        <a>Back to Home</a>
-      </Link>
+      <p>
+        This Booking is with {booking.doctor_name} for {booking.service} and it
+        ends on {booking.end_time}
+      </p>
+      <Link href="/">Back to Home</Link>
     </div>
   );
 };
